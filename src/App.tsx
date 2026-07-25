@@ -25,6 +25,15 @@ const viewsByRole: Record<string, ReadonlySet<View>> = {
 const homeForRole = (role: string): View =>
   role === 'student' ? 'dashboard' : role === 'parent' ? 'parent' : 'instructor';
 
+function InnerMark({ size = 25 }: { size?: number }) {
+  return <svg className="inner-mark" width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
+    <path d="M8 8.5 16 4l8 4.5v9L16 22l-8-4.5v-9Z" />
+    <path d="M12 11.2 16 9l4 2.2v4.6L16 18l-4-2.2v-4.6Z" />
+    <path d="M16 22v6M11.5 25h9" />
+    <circle cx="16" cy="13.5" r="1.8" />
+  </svg>;
+}
+
 const questions = [
   { q: 'أي خطوة تأتي أولًا عند حل مشكلة برمجية؟', a: ['كتابة الكود فورًا', 'فهم المشكلة وتقسيمها', 'اختيار الألوان', 'حفظ الحل'], correct: 1 },
   { q: 'ما الناتج المتوقع من: 3 + 2 × 2 ؟', a: ['10', '7', '8', '12'], correct: 1 },
@@ -94,7 +103,7 @@ export function App() {
     <div className={dark ? 'app dark' : 'app light'} dir="rtl">
       <header className="topbar">
         <button className="brand" onClick={() => go('home')} aria-label="الصفحة الرئيسية">
-          <span className="brand-mark"><BrainCircuit size={23} /></span>
+          <span className="brand-mark"><InnerMark /></span>
           <span><b>{APP.name}</b><small>مختبر مستقبلك يبدأ هنا</small></span>
         </button>
         <nav className={menu ? 'nav open' : 'nav'}>
@@ -209,7 +218,7 @@ function Placement({ go }: { go: (v: View) => void }) {
   const q = questions[index];
   const choose = (a: number) => { const next = [...answers]; next[index] = a; setAnswers(next); };
   return <main className="flow-page"><div className="test-shell">
-    <div className="flow-top"><button className="brand" onClick={()=>go('home')}><span className="brand-mark"><BrainCircuit/></span><b>{APP.name}</b></button><span><Clock3/> حوالي 5 دقائق</span></div>
+    <div className="flow-top"><button className="brand" onClick={()=>go('home')}><span className="brand-mark"><InnerMark/></span><b>{APP.name}</b></button><span><Clock3/> حوالي 5 دقائق</span></div>
     <div className="progress-top"><span>السؤال {index+1} من {questions.length}</span><b>{Math.round((index+1)/questions.length*100)}%</b></div><div className="progress-line"><i style={{width:`${(index+1)/questions.length*100}%`}}/></div>
     <div className="question-card"><span className="question-type">تفكير منطقي</span><h1>{q.q}</h1><div className="answers">{q.a.map((answer,a)=><button className={answers[index]===a?'selected':''} key={answer} onClick={()=>choose(a)}><i>{['أ','ب','ج','د'][a]}</i>{answer}{answers[index]===a&&<Check/>}</button>)}</div>
       <div className="question-nav"><button className="secondary" disabled={index===0} onClick={()=>setIndex(index-1)}>السابق</button><button className="primary" disabled={answers[index]===null} onClick={()=>index===questions.length-1?setDone(true):setIndex(index+1)}>{index===questions.length-1?'عرض النتيجة':'السؤال التالي'} <ChevronLeft/></button></div>
@@ -387,7 +396,7 @@ function Dashboard({ go, progress }: { go:(v:View)=>void; progress:number }) {
   </div></main>;
 }
 
-function SideNav({go}:{go:(v:View)=>void}){return <aside className="side-nav"><button className="brand" onClick={()=>go('home')}><span className="brand-mark"><BrainCircuit/></span><b>Yasser AI</b></button><nav><button className="active" onClick={()=>go('dashboard')}><LayoutDashboard/> لوحة التحكم</button><button onClick={()=>go('lesson')}><Compass/> مساري التعليمي</button><button onClick={()=>go('notifications')}><Bell/> الإشعارات</button><button onClick={()=>go('account')}><Settings/> الحساب والخصوصية</button></nav><div className="side-bottom"><button onClick={()=>go('parent')}><Users/> لوحة ولي الأمر</button><button onClick={()=>go('instructor')}><BarChart3/> لوحة المدرّس</button></div></aside>}
+function SideNav({go}:{go:(v:View)=>void}){return <aside className="side-nav"><button className="brand" onClick={()=>go('home')}><span className="brand-mark"><InnerMark/></span><b>inner</b></button><nav><button className="active" onClick={()=>go('dashboard')}><LayoutDashboard/> لوحة التحكم</button><button onClick={()=>go('lesson')}><Compass/> مساري التعليمي</button><button onClick={()=>go('notifications')}><Bell/> الإشعارات</button><button onClick={()=>go('account')}><Settings/> الحساب والخصوصية</button></nav><div className="side-bottom"><button onClick={()=>go('parent')}><Users/> لوحة ولي الأمر</button><button onClick={()=>go('instructor')}><BarChart3/> لوحة المدرّس</button></div></aside>}
 
 function Lesson({go}:{go:(v:View)=>void}){
   const [tab,setTab]=useState<'learn'|'quiz'|'code'>('learn'); const [answer,setAnswer]=useState<number|null>(null); const [run,setRun]=useState(false);
@@ -507,7 +516,7 @@ function Assistant(){
       setMessages(items=>[...items,{role:'assistant',text:errorMessage}]);
     }finally{setLoading(false)}
   };
-  return <div className="assistant"><button className="assistant-btn" aria-label={open?'إغلاق المرشد الذكي':'اسأل مُرشدك الذكي'} onClick={()=>setOpen(!open)}><Bot/>{!open&&<span>اسأل مُرشدك الذكي</span>}</button>{open&&<div className="assistant-panel assistant-chat"><div className="assistant-head"><span><Bot/> مُرشد Yasser AI <i/></span><button aria-label="إغلاق نافذة المرشد" onClick={()=>setOpen(false)}><X/></button></div><div className="chat-messages" aria-live="polite">{messages.map((item,index)=><p className={item.role} key={`${item.role}-${index}`}>{item.text}</p>)}{loading&&<p className="assistant typing">أفكر في أفضل إجابة<span>•••</span></p>}</div><div className="suggestions"><button onClick={()=>void ask('ما مستوى تقدمي؟')}>تقدّمي</button><button onClick={()=>void ask('اشرح لي أساسيات Python')}>شرح Python</button><button onClick={()=>void ask('ساعدني أختار المسار المناسب')}>اختيار المسار</button></div><label><span className="sr-only">سؤالك للمرشد</span><input value={input} maxLength={1500} onChange={event=>setInput(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();void ask()}}} placeholder="اسألني أي شيء عن تعلّمك..."/><button aria-label="إرسال السؤال" disabled={loading||!input.trim()} onClick={()=>void ask()}><ArrowLeft/></button></label><small className="assistant-privacy"><ShieldCheck/> يستخدم بيانات تعلّمك المصرح بها فقط لتخصيص المساعدة</small></div>}</div>
+  return <div className="assistant"><button className="assistant-btn" aria-label={open?'إغلاق المرشد الذكي':'اسأل مُرشدك الذكي'} onClick={()=>setOpen(!open)}><Bot/>{!open&&<span>اسأل مُرشدك الذكي</span>}</button>{open&&<div className="assistant-panel assistant-chat"><div className="assistant-head"><span><Bot/> مُرشد inner <i/></span><button aria-label="إغلاق نافذة المرشد" onClick={()=>setOpen(false)}><X/></button></div><div className="chat-messages" aria-live="polite">{messages.map((item,index)=><p className={item.role} key={`${item.role}-${index}`}>{item.text}</p>)}{loading&&<p className="assistant typing">أفكر في أفضل إجابة<span>•••</span></p>}</div><div className="suggestions"><button onClick={()=>void ask('ما مستوى تقدمي؟')}>تقدّمي</button><button onClick={()=>void ask('اشرح لي أساسيات Python')}>شرح Python</button><button onClick={()=>void ask('ساعدني أختار المسار المناسب')}>اختيار المسار</button></div><label><span className="sr-only">سؤالك للمرشد</span><input value={input} maxLength={1500} onChange={event=>setInput(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();void ask()}}} placeholder="اسألني أي شيء عن تعلّمك..."/><button aria-label="إرسال السؤال" disabled={loading||!input.trim()} onClick={()=>void ask()}><ArrowLeft/></button></label><small className="assistant-privacy"><ShieldCheck/> يستخدم بيانات تعلّمك المصرح بها فقط لتخصيص المساعدة</small></div>}</div>
 }
 
-function Footer({go}:{go:(v:View)=>void}){return <footer><div className="brand"><span className="brand-mark"><BrainCircuit/></span><span><b>{APP.name}</b><small>تعلم اليوم. ابنِ الغد.</small></span></div><div><b>المنصة</b><button onClick={()=>go('placement')}>اختبار المستوى</button><a href="#paths">المسارات</a><a href="#pricing">الأسعار</a></div><div><b>الدعم</b><a href={`mailto:${APP.support}`}>تواصل معنا</a><button onClick={()=>go('parent')}>ولي الأمر</button><span>الأسئلة الشائعة</span></div><div><b>قانوني</b><span>سياسة الخصوصية</span><span>الشروط والأحكام</span></div><p>© 2026 {APP.name}. صُممت الرحلة لطلاب يصنعون المستقبل.</p></footer>}
+function Footer({go}:{go:(v:View)=>void}){return <footer><div className="brand"><span className="brand-mark"><InnerMark/></span><span><b>{APP.name}</b><small>تعلم اليوم. ابنِ الغد.</small></span></div><div><b>المنصة</b><button onClick={()=>go('placement')}>اختبار المستوى</button><a href="#paths">المسارات</a><a href="#pricing">الأسعار</a></div><div><b>الدعم</b><a href={`mailto:${APP.support}`}>تواصل معنا</a><button onClick={()=>go('parent')}>ولي الأمر</button><span>الأسئلة الشائعة</span></div><div><b>قانوني</b><span>سياسة الخصوصية</span><span>الشروط والأحكام</span></div><p>© 2026 {APP.name}. صُممت الرحلة لطلاب يصنعون المستقبل.</p></footer>}
