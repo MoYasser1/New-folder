@@ -1,0 +1,10 @@
+{
+  "name": "Yasser AI Academy",
+  "short_name": "Yasser AI",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f"
+}

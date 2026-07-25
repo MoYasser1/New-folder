@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.git
+.github
+node_modules
+dist
+server-dist
+test-results
+playwright-report
+.runtime-uploads
+*.log
+coverage

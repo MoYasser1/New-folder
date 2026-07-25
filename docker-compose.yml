@@ -1,0 +1,59 @@
+services:
+  web:
+    build:
+      context: .
+      args:
+        VITE_PAYMENT_MODE: sandbox
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+  api:
+    build:
+      context: .
+      dockerfile: server.Dockerfile
+    environment:
+      NODE_ENV: development
+      DEV_MEMORY_MODE: "false"
+      API_HOST: 0.0.0.0
+      API_PORT: 3001
+      WEB_ORIGIN: http://localhost:8080
+      DATABASE_URL: postgres://academy:${POSTGRES_PASSWORD:-academy}@postgres:5432/academy
+      SESSION_SECRET: ${SESSION_SECRET:-development-only-secret-change-before-production}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-sandbox}
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-sandbox-webhook-secret-change-me}
+      SEED_DEMO_DATA: "true"
+    ports:
+      - "3001:3001"
+    volumes:
+      - uploads_data:/app/.runtime-uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health/ready"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: academy
+      POSTGRES_USER: academy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-academy}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U academy -d academy"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+volumes:
+  postgres_data:
+  uploads_data:

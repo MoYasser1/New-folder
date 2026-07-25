@@ -1,0 +1,275 @@
+openapi: 3.1.0
+info:
+  title: Yasser AI Academy API
+  version: 1.0.0
+  description: Authenticated education, commerce, portal, tutor, and credential APIs.
+servers:
+  - url: http://localhost:3001/api
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: yaa_session
+  schemas:
+    Error:
+      type: object
+      required: [code]
+      properties:
+        code: { type: string }
+        message: { type: string }
+        requestId: { type: string }
+paths:
+  /auth/register:
+    post:
+      summary: Create a student account and session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullName, email, password, acceptedTerms]
+              properties:
+                fullName: { type: string, minLength: 2 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, maxLength: 128 }
+                acceptedTerms: { const: true }
+      responses:
+        "201": { description: Account created }
+        "409": { description: Email exists }
+  /auth/login:
+    post:
+      summary: Create a session
+      responses:
+        "200": { description: Authenticated }
+        "401": { description: Invalid credentials }
+  /auth/logout:
+    post:
+      security: [{ sessionCookie: [] }]
+      responses:
+        "204": { description: Session revoked }
+  /auth/me:
+    get:
+      security: [{ sessionCookie: [] }]
+      responses:
+        "200": { description: Current user }
+        "401": { description: Authentication required }
+  /auth/request-email-verification:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Send a six-digit, expiring email verification code
+      responses:
+        "200": { description: Code dispatched or account already verified }
+        "401": { description: Authentication required }
+        "429": { description: Request limit exceeded }
+  /auth/verify-email:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Consume a one-time email verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [otp]
+              properties:
+                otp: { type: string, pattern: '^\d{6}$' }
+      responses:
+        "200": { description: Email verified }
+        "400": { description: Invalid, expired, used, or attempt-limited code }
+  /placement/submit:
+    post:
+      summary: Score a placement attempt on the server
+      responses:
+        "201": { description: Placement result }
+  /courses:
+    get:
+      summary: Published course catalog
+      responses:
+        "200": { description: Course list }
+  /dashboard:
+    get:
+      security: [{ sessionCookie: [] }]
+      responses:
+        "200": { description: Student enrollment progress }
+  /checkout:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Create an idempotent order
+      responses:
+        "201": { description: Order created }
+  /payments/sandbox/{orderId}:
+    post:
+      security: [{ sessionCookie: [] }]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Payment and enrollment completed }
+  /account/orders:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: List the authenticated customer's orders
+      responses:
+        "200": { description: Order history }
+  /account/orders/{orderId}/invoice:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: Get an invoice for an owned paid order
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: Invoice details }
+        "404": { description: Invoice not found }
+  /finance/orders/{orderId}/refunds:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Create an idempotent full or partial refund
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "201": { description: Refund created }
+        "403": { description: Finance permission required }
+        "502": { description: Configured payment provider unavailable }
+  /code/run:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Submit code to the configured sandbox adapter
+      responses:
+        "200": { description: Bounded execution result }
+        "422": { description: Unsafe source rejected }
+  /tutor/message:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Request a guarded Socratic hint
+      responses:
+        "200": { description: Tutor response }
+        "422": { description: Sensitive or moderated content rejected }
+  /auth/forgot-password:
+    post:
+      summary: Dispatch a non-enumerating password reset message
+      responses:
+        "200": { description: Accepted whether or not the account exists }
+  /auth/reset-password:
+    post:
+      summary: Consume a one-time reset token and revoke existing sessions
+      responses:
+        "200": { description: Password replaced }
+        "400": { description: Invalid, expired, or consumed token }
+  /account/sessions:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: List active sessions and identify the current session
+      responses:
+        "200": { description: Session list }
+  /account/sessions/{id}:
+    delete:
+      security: [{ sessionCookie: [] }]
+      summary: Revoke one owned session
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Session revoked }
+        "404": { description: Session not found }
+  /account/export:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: Export the authenticated user's portable account data
+      responses:
+        "200": { description: Account export without credential material }
+  /account:
+    delete:
+      security: [{ sessionCookie: [] }]
+      summary: Close or anonymize an account after password confirmation
+      responses:
+        "204": { description: Account closed and sessions revoked }
+        "400": { description: Confirmation required }
+  /uploads/{purpose}:
+    post:
+      security: [{ sessionCookie: [] }]
+      summary: Upload a signature-validated private asset
+      parameters:
+        - in: path
+          name: purpose
+          required: true
+          schema: { type: string, enum: [avatar, project_artifact, lesson_media, lesson_download] }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201": { description: Private media asset created }
+        "403": { description: Purpose not allowed for this role }
+        "413": { description: File exceeds configured maximum }
+        "415": { description: Media type or signature rejected }
+  /account/uploads:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: List owned uploads without exposing storage keys
+      responses:
+        "200": { description: Owned media assets }
+  /uploads/{id}:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: Read an owned private upload
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: File bytes or a temporary provider redirect }
+        "404": { description: Asset not found }
+    delete:
+      security: [{ sessionCookie: [] }]
+      summary: Delete an owned upload
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Asset deleted }
+  /admin/audit-logs:
+    get:
+      security: [{ sessionCookie: [] }]
+      summary: Read recent administrative audit events
+      parameters:
+        - in: query
+          name: action
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200": { description: Newest audit events first }
+        "403": { description: Audit permission required }
+  /certificates/verify/{code}:
+    get:
+      summary: Public certificate verification
+      parameters:
+        - in: path
+          name: code
+          required: true
+          schema: { type: string }
+      responses:
+        "200": { description: Public certificate details }
+        "404": { description: Certificate not found }
